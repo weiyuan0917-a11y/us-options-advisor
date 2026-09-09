@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美股期权策略推荐 · 交易向导</title>
+<script src="/echarts.min.js"></script>
+<style>
+:root{
+  --blue:#3a6df0; --red:#c62f2f; --green:#0d7a43;
+  --txt:#1c2430; --sub:#5b6472; --line:#e6e9f0; --bg:#f5f6f8; --card:#fff;
+}
+*{box-sizing:border-box;}
+body{font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif;background:var(--bg);color:var(--txt);margin:0;padding:0 0 40px;}
+.wrap{max-width:1180px;margin:0 auto;padding:0 16px;}
+header{background:linear-gradient(135deg,#2b4fd0,#3a6df0 55%,#5f8bff);color:#fff;padding:22px 0 20px;margin-bottom:18px;}
+header h1{margin:0;font-size:22px;}
+header .sub{font-size:13px;opacity:.85;margin-top:6px;}
+.card{background:var(--card);border-radius:12px;box-shadow:0 1px 5px rgba(20,30,50,.08);padding:18px 20px;margin-bottom:14px;}
+h2{font-size:15px;margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+h2 .bar{width:4px;height:16px;background:var(--blue);border-radius:2px;}
+.form-row{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end;}
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:12px;color:var(--sub);}
+.field input{border:1px solid #d4d9e3;border-radius:8px;padding:9px 12px;font-size:15px;width:170px;outline:none;font-family:inherit;}
+.field input:focus{border-color:var(--blue);}
+.field input.big{width:130px;font-size:20px;font-weight:700;text-align:center;}
+.field .hint{font-size:11px;color:#9aa3b2;}
+button{font-family:inherit;}
+button.primary{background:var(--blue);color:#fff;border:none;border-radius:9px;padding:11px 26px;font-size:14px;font-weight:600;cursor:pointer;}
+button.primary:hover{background:#2f5be0;}
+button.primary:disabled{background:#9db4f5;cursor:not-allowed;}
+button.ghost{background:#fff;color:var(--blue);border:1px solid var(--blue);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;}
+button.ghost:hover{background:#eef3ff;}
+button.ghost:disabled{color:#9aa3b2;border-color:#d4d9e3;cursor:not-allowed;}
+button.ghost.active{background:var(--blue);color:#fff;}
+button.ghost.sm{padding:6px 10px;font-size:12px;border-radius:7px;white-space:nowrap;}
+.inrow{display:flex;gap:6px;align-items:center;}
+details.adv{margin-top:12px;font-size:13px;color:var(--sub);}
+details.adv summary{cursor:pointer;user-select:none;width:fit-content;}
+.adv-grid{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;}
+.adv-grid .field input{width:110px;font-size:14px;}
+.err{background:#fdecec;color:var(--red);border:1px solid #f3c1c1;border-radius:9px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none;}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px 20px;background:var(--card);border-radius:12px;box-shadow:0 1px 5px rgba(20,30,50,.08);margin-bottom:14px;}
+.toolbar .lbl{font-size:13px;color:var(--sub);font-weight:600;margin-right:6px;}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px;}
+.kpi{background:var(--card);border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(20,30,50,.07);border-top:3px solid var(--blue);}
+.kpi .k{font-size:12px;color:var(--sub);}
+.kpi .v{font-size:20px;font-weight:700;margin-top:3px;}
+.kpi .n{font-size:11px;color:#9aa3b2;margin-top:2px;}
+.filter-bar{display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap;}
+.filter-bar label.chk{font-size:13px;color:var(--sub);display:flex;align-items:center;gap:5px;cursor:pointer;}
+select{border:1px solid #d4d9e3;border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;background:#fff;outline:none;max-width:420px;}
+table{border-collapse:collapse;width:100%;background:#fff;font-size:13px;}
+th{background:#eef1f6;padding:8px 10px;text-align:right;font-weight:600;white-space:nowrap;position:sticky;top:0;}
+th:first-child,td:first-child{text-align:left;}
+td{padding:7px 10px;border-bottom:1px solid #eef0f4;text-align:right;white-space:nowrap;}
+tbody tr{cursor:pointer;}
+tbody tr:hover{background:#f6f9ff;}
+tr.match{background:#f2f7ff;}
+tr.match:hover{background:#e8f1ff;}
+tr.sel{outline:2px solid var(--blue);outline-offset:-2px;}
+.pos{color:var(--red);font-weight:600;}
+.neg{color:var(--green);font-weight:600;}
+.star{color:#e6a700;}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:#eef1f6;color:#44506a;}
+.tag.bull{background:#fdeaea;color:var(--red);}
+.tag.bear{background:#e8f5ee;color:var(--green);}
+.tag.vol{background:#f3ecfb;color:#6b3fa0;}
+.tag.hedge{background:#fff4e3;color:#a06a00;}
+.muted{color:#9aa3b2;}
+.capb{display:inline-block;padding:1px 8px;border-radius:9px;font-size:11px;font-weight:600;white-space:nowrap;line-height:1.6;vertical-align:1px;cursor:help;}
+.capcell{white-space:normal;}
+.capcell .capb{margin-top:3px;}
+.grp{display:inline-block;margin-left:6px;padding:0 6px;border-radius:7px;font-size:11px;font-weight:600;color:#185fa5;background:#e6f1fb;border:0.5px solid #85b7eb;vertical-align:1px;cursor:help;white-space:nowrap;}
+#chart{width:100%;height:440px;}
+.detail-grid{display:grid;grid-template-columns:1fr 320px;gap:14px;}
+@media(max-width:900px){.detail-grid{grid-template-columns:1fr;}}
+.legbox{font-size:13px;}
+.legbox .legs{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;}
+.legbox .legs li{background:#f7f9fc;border-radius:8px;padding:8px 12px;border-left:3px solid var(--blue);}
+.legbox .legs li.sell{border-left-color:var(--green);}
+.legbox .legs li .meta{color:var(--sub);font-size:12px;margin-top:2px;}
+.note{font-size:12px;color:#8a93a3;line-height:1.7;}
+.desc{font-size:13px;color:var(--sub);line-height:1.7;margin:6px 0 12px;}
+#loading{display:none;text-align:center;padding:30px;color:var(--sub);font-size:14px;}
+.spinner{display:inline-block;width:26px;height:26px;border:3px solid #d7e0f5;border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;vertical-align:-7px;margin-right:9px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.card.flash{animation:flash 1.4s ease-out 1;}
+@keyframes flash{
+  0%{box-shadow:0 0 0 0 rgba(58,109,240,0);border-color:transparent;}
+  20%{box-shadow:0 0 0 6px rgba(58,109,240,.25);border-color:var(--blue);}
+  100%{box-shadow:0 1px 5px rgba(20,30,50,.08);border-color:transparent;}
+}
+.hidden{display:none!important;}
+.view-mode{display:inline-flex;border:1px solid #d4d9e3;border-radius:8px;overflow:hidden;}
+.view-mode button{background:#fff;border:none;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--sub);}
+.view-mode button.on{background:var(--blue);color:#fff;}
+.compare-table{width:100%;font-size:13px;}
+.compare-table th{background:#f0f4fb;color:var(--sub);font-size:12px;}
+.compare-table td{padding:8px;}
+.compare-table tr.lead td{background:#f6f9ff;font-weight:600;}
+footer{text-align:center;color:#9aa3b2;font-size:12px;margin-top:22px;line-height:1.8;}
+.iv-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;}
+@media(max-width:900px){.iv-grid{grid-template-columns:1fr;}}
+.iv-grid .chart{height:340px;}
+.iv-term-chart{height:260px;margin-top:14px;}
+.swatch{display:inline-block;width:10px;height:10px;border-radius:2px;vertical-align:middle;margin-right:6px;}
+.lpbar{background:#eef5ff;border:1px solid #c9dcff;color:#185fa5;border-radius:9px;padding:8px 12px;margin-bottom:12px;font-size:12.5px;line-height:1.8;}
+.insline{padding:9px 13px;margin:5px 0;background:#f5f8ff;border-left:3px solid #3a6df0;border-radius:0 8px 8px 0;font-size:13px;line-height:1.8;color:#1c2430;}
+.insline.cashline{border-left-color:#0f6e56;background:#eefaf6;}
+.wrap.hdr{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;}
+.hdrbtn{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:10px;padding:8px 13px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:7px;white-space:nowrap;}
+.hdrbtn:hover{background:rgba(255,255,255,.3);}
+.hdrbtn .dot{width:8px;height:8px;border-radius:50%;background:#c9d4f0;display:inline-block;flex:none;}
+.hdrbtn.ok .dot{background:#8ef0b6;box-shadow:0 0 0 3px rgba(142,240,182,.25);}
+.hdrbtn.warn .dot{background:#ffd66e;box-shadow:0 0 0 3px rgba(255,214,110,.25);}
+.moverlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:99;display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px 20px;}
+.mcard{background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(10,20,40,.25);width:660px;max-width:100%;padding:18px 20px;max-height:86vh;overflow:auto;}
+.mhead{display:flex;justify-content:space-between;align-items:center;font-size:15px;margin-bottom:12px;}
+.mstatus{font-size:13px;padding:8px 12px;border-radius:8px;background:#f1f3f7;color:#44506a;margin-bottom:12px;line-height:1.6;}
+.mstatus.ok{background:#e8f5ee;color:#0f6e56;}
+.mstatus.bad{background:#fdecec;color:#c62f2f;}
+.tabs{display:flex;gap:8px;margin-bottom:14px;}
+.tab{flex:1;border:1px solid #d4d9e3;background:#fff;border-radius:9px;padding:9px;font-size:13px;cursor:pointer;color:var(--sub);}
+.tab.on{background:#eef3ff;border-color:var(--blue);color:var(--blue);font-weight:600;}
+.mtip{font-size:12px;color:#8a93a3;line-height:1.7;margin:0 0 12px;}
+.mfield{display:flex;flex-direction:column;gap:5px;margin-bottom:10px;}
+.mfield label{font-size:12px;color:var(--sub);}
+.mfield input{border:1px solid #d4d9e3;border-radius:8px;padding:8px 11px;font-size:13px;font-family:inherit;outline:none;}
+.mfield input:focus{border-color:var(--blue);}
+.mrow2{display:flex;gap:10px;}
+.mfield.grow{flex:1;}
+.mbtns{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center;}
+button.primary.sm{padding:8px 16px;font-size:13px;}
+button.ghost.sm.danger{color:#c62f2f;border-color:#e8b4b4;}
+button.ghost.sm.danger:hover{background:#fdecec;}
+.merr{color:#c62f2f;font-size:12.5px;margin-top:9px;line-height:1.6;}
+.oauthbox{background:#f7f9fc;border:1px solid #e6e9f0;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:13px;line-height:1.8;color:#1c2430;}
+.oauthbox a{color:var(--blue);word-break:break-all;font-size:12.5px;}
+
+@media print {
+  body{background:#fff;}
+  .toolbar,details.adv,.err,#loading,header,footer,.filter-bar{display:none!important;}
+  .card{box-shadow:none;border:1px solid #e0e4ec;page-break-inside:avoid;}
+  #chart,#iv-call-chart,#iv-put-chart,#iv-term-chart{height:380px!important;}
+}
+</style>
+</head>
+<body>
+<header><div class="wrap hdr">
+  <div>
+    <h1>📈 美股期权策略推荐 · 交易向导</h1>
+    <div class="sub">输入股票代码、当前持仓与预计到期目标价，自动推荐全部适用的中长期期权策略并测算到期收益</div>
+  </div>
+  <button class="hdrbtn" id="btnLpCfg" onclick="openLpSettings()" title="配置 LongBridge(LongPort) API Key 或完成账号授权，用于自动带入持仓/现金、券商一致目标价与财报日">
+    <span class="dot" id="cfgDot"></span>⚙ <span id="cfgTxt">连接设置</span>
+  </button>
+</div></header>
+
+<div class="wrap">
+
+  <!-- ① 输入 -->
+  <div class="card">
+    <h2><span class="bar"></span>第一步 · 输入分析条件</h2>
+    <div class="form-row">
+      <div class="field">
+        <label>股票代码 *</label>
+        <input id="ticker" class="big" placeholder="AAPL" maxlength="5" autocomplete="off" style="text-transform:uppercase">
+        <span class="hint">美股代码，如 AAPL / NVDA / TSLA</span>
+      </div>
+      <div class="field">
+        <label>当前持仓（股）</label>
+        <div class="inrow">
+          <input id="position" type="number" step="100" value="0" style="width:130px">
+          <button class="ghost sm" id="btnLpPos" onclick="lpLoadPosition()" title="从 LongBridge 账户读取该股持仓与美元现金">从账户读取</button>
+        </div>
+        <span class="hint" id="posHint">0=无持仓，负数=空头</span>
+      </div>
+      <div class="field">
+        <label>预计到期目标价</label>
+        <div class="inrow">
+          <input id="target" placeholder="350 或 +10% 或 -5%" style="width:200px">
+          <button class="ghost sm" id="btnLpTarget" onclick="lpLoadTarget()" title="读取 LongBridge 券商一致目标价与财报日">券商目标价</button>
+        </div>
+        <span class="hint" id="tgtHint">绝对价格 / 涨跌幅，留空=维持现价</span>
+      </div>
+      <button class="primary" id="btn" onclick="runAnalysis()">开始分析</button>
+    </div>
+    <details class="adv" open><summary>高级选项 · 到期天数 / 报告含曲线策略数</summary>
+      <div class="adv-grid">
+        <div class="field"><label>主到期天数 DTE</label><input id="dte" type="number" value="180"><span class="hint">主策略腿到期距今的天数</span></div>
+        <div class="field"><label>中长期最短天数</label><input id="min_dte" type="number" value="90"><span class="hint">过滤掉 DTE 小于此值的到期日</span></div>
+        <div class="field"><label>近月腿天数</label><input id="near_dte" type="number" value="45"><span class="hint">日历/对角策略的近月腿 DTE</span></div>
+        <div class="field"><label>报告含曲线策略数</label><input id="chart_top" type="number" value="8" min="3" max="20"><span class="hint">报告中绘制的策略曲线数量</span></div>
+      </div>
+    </details>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div id="loading"><span class="spinner"></span>正在获取期权链并生成策略，约需 5~15 秒…</div>
+
+  <!-- ② 结果 -->
+  <div id="result" class="hidden">
+
+    <!-- 工具栏(导出) -->
+    <div class="toolbar" id="toolbar">
+      <button class="ghost" onclick="editConditions()">✏️ 修改条件</button>
+      <span class="lbl">📥 报告导出：</span>
+      <button class="ghost" onclick="exportReport('report')">完整 HTML 报告</button>
+      <button class="ghost" onclick="exportReport('csv')">下载 CSV 明细</button>
+      <button class="ghost" onclick="window.print()">打印 / 保存 PDF</button>
+      <span class="muted" style="font-size:12px;margin-left:8px">提示：打印请选「另存为 PDF」</span>
+    </div>
+
+    <div id="lpBar" class="lpbar hidden"></div>
+
+    <div class="cards" id="kpis"></div>
+
+    <!-- AI 策略解读 -->
+    <div class="card hidden" id="insightCard">
+      <h2><span class="bar"></span>🤖 AI 策略解读
+        <span class="muted" style="font-size:12px;font-weight:400">（确定性规则引擎 · 结合观点/IV面/券商目标价/财报日历/账户资金面）</span></h2>
+      <div id="insightBox"></div>
+    </div>
+
+    <!-- ③ 策略表 + 多选对比 -->
+    <div class="card">
+      <h2><span class="bar"></span>第二步 · 全部适用策略（按匹配观点 + 目标价 ROI 排序）</h2>
+      <div class="filter-bar">
+        <label class="chk"><input type="checkbox" id="onlyMatch" onchange="renderTable()"> 只看匹配当前观点的策略 ★</label>
+        <span class="muted">点击行查看单策略曲线 / 勾选下方□加入多策略对比（最多 4 个）</span>
+      </div>
+      <div style="overflow:auto;max-height:480px;border:1px solid var(--line);border-radius:8px;">
+        <table id="tbl">
+          <thead><tr>
+            <th style="width:30px"><input type="checkbox" id="chkAll" onchange="toggleAll(this.checked)"></th>
+            <th>策略</th><th>观点</th><th>风险</th><th>现金流</th><th>资金占用</th><th>盈亏平衡</th>
+            <th>最大盈利</th><th>最大亏损</th><th>目标价收益</th><th>ROI</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ④ 损益曲线 -->
+    <div class="card">
+      <h2><span class="bar"></span>第三步 · 到期损益曲线</h2>
+      <div class="filter-bar">
+        <select id="stratSel" onchange="setSingleStrategy(this.value)"></select>
+        <div class="view-mode">
+          <button id="modeSingle" class="on" onclick="setMode('single')">单策略</button>
+          <button id="modeCompare" onclick="setMode('compare')">多策略对比</button>
+        </div>
+        <button class="ghost" id="compareBtn" onclick="runCompare()" disabled>对比选中 (N)</button>
+        <button class="ghost" id="clearBtn" onclick="clearCompare()" style="display:none">清除对比</button>
+        <span class="muted" id="stratMeta"></span>
+      </div>
+      <div id="chart"></div>
+
+      <!-- 单策略详情 -->
+      <div id="singleDetail" class="detail-grid">
+        <div>
+          <div class="desc" id="dDesc"></div>
+          <div class="legbox"><ul class="legs" id="dLegs"></ul></div>
+        </div>
+        <div>
+          <div class="kpi" style="border-top-color:var(--red)"><div class="k">最大盈利</div><div class="v" id="dMaxP"></div></div>
+          <div class="kpi" style="border-top-color:var(--green)"><div class="k">最大亏损</div><div class="v" id="dMaxL"></div></div>
+          <div class="kpi"><div class="k">盈亏平衡点</div><div class="v" style="font-size:16px" id="dBE"></div></div>
+          <div class="kpi" style="border-top-color:#e6a700"><div class="k">目标价收益 / ROI</div><div class="v" style="font-size:16px" id="dTarget"></div></div>
+          <div class="kpi" style="border-top-color:#8a93a3"><div class="k">净 Delta / Theta</div><div class="v" style="font-size:16px" id="dGreeks"></div></div>
+          <div class="kpi" style="border-top-color:#0f6e56"><div class="k">资金占用</div><div class="v" style="font-size:18px" id="dCap"></div><div class="n" id="dCapNote"></div></div>
+        </div>
+      </div>
+
+      <!-- 对比表(对比模式显示) -->
+      <div id="compareDetail" class="hidden" style="margin-top:14px">
+        <table class="compare-table" id="cmpTbl">
+          <thead><tr><th>策略</th><th>现金流</th><th>资金占用</th><th>目标价收益</th><th>ROI</th><th>最大盈利</th><th>最大亏损</th><th>盈亏平衡</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="note">红色=盈利、绿色=亏损（A股习惯配色）。竖线：蓝=现价、橙=目标价、灰虚线=盈亏平衡点。多策略对比时每个策略用一种颜色，蓝色=匹配观点的优选。</div>
+    </div>
+
+    <!-- ⑤ IV 分析 -->
+    <div class="card">
+      <h2><span class="bar"></span>第四步 · 隐含波动率面分析（IV Surface）</h2>
+      <div class="cards" style="margin-bottom:10px" id="ivKpis"></div>
+      <div class="iv-grid">
+        <div>
+          <div class="note" style="margin:0 0 4px 0"><b>📈 Call IV Skew</b>：Moneyness = K / 现价。每个到期日一条线</div>
+          <div id="iv-call-chart" class="chart"></div>
+        </div>
+        <div>
+          <div class="note" style="margin:0 0 4px 0"><b>📉 Put IV Skew</b>：左端=深度虚值 put（避险溢价）</div>
+          <div id="iv-put-chart" class="chart"></div>
+        </div>
+      </div>
+      <div class="note" style="margin-top:8px"><b>⏱ Term Structure</b>：不同 DTE 的 ATM 隐含波动率</div>
+      <div id="iv-term-chart" class="iv-term-chart"></div>
+      <div class="note">读法：Skew 左侧高=避险溢价大（市场偏看跌）；右侧高=虚值 call 贵（市场偏看多）。Term 向下（contango）=长期 IV 高，短期 IV 低，属常态；向上（backwardation）=近期恐慌。25-Delta Skew 为 25-Δ Put IV − 25-Δ Call IV，正数 = 避险溢价。</div>
+    </div>
+  </div>
+
+  <footer>数据来源 CBOE 全球延迟行情 · 本工具仅供学习研究参考，不构成投资建议 · 市场有风险，投资需谨慎</footer>
+</div>
+
+<script>
+var DATA=null, curIdx=0, chart=null, ivCall=null, ivPut=null, ivTerm=null;
+var COMPARE_IDX=[];      // 多策略对比选中idx
+var MODE="single";       // 'single' or 'compare'
+var LP={cash:null,target:null,earn:null,posInfo:"",tgtInfo:""}; // LongBridge 上下文
+
+var COLORS=["#3a6df0","#e69100","#0d7a43","#c62f2f","#6b3fa0","#1c8caf","#a06a00","#0a6c5e"];
+
+function $(id){return document.getElementById(id);}
+function fmtMoney(v,sign){
+  if(v===null||v===undefined)return "-";
+  var s=(v>=0&&sign)?"+":"";
+  var n=Math.abs(v);
+  return s+"$"+(n>=1000?n.toLocaleString("en-US",{maximumFractionDigits:0}):n.toFixed(0));
+}
+function fmtPct(v){return (v===null||v===undefined)?"-":(v>=0?"+":"")+v.toFixed(1)+"%";}
+
+// 资金占用类型: 这$是"花掉"还是"押着"?  4类徽章
+function capClass(r){
+  var n=r.capital_note||"";
+  if(n.indexOf("全额现金担保")>=0)return {t:"现金担保",c:"#185fa5",bg:"#e6f1fb"};
+  if(n.indexOf("价差")>=0||n.indexOf("翼")>=0)return {t:"押价差宽度",c:"#854f0b",bg:"#faeeda"};
+  if(n.indexOf("正股")>=0||n.indexOf("空头")>=0)return {t:"买/押正股",c:"#534ab7",bg:"#eeedfe"};
+  return {t:"付权利金",c:"#0f6e56",bg:"#e1f5ee"};
+}
+function capBadge(r){
+  var k=capClass(r);
+  return '<span class="capb" style="color:'+k.c+';background:'+k.bg+'" title="资金占用口径: '+r.capital_note+'">'+k.t+'</span>';
+}
+function capIsCost(r){return capClass(r).t==="付权利金";}
+
+// 带股策略规模化徽章: 持仓可支撑 N 组合约时, 金额/损益已按 N 组放大
+function grpTag(r){
+  if(!r||!r.stock_qty||!r.groups||r.groups<=1)return "";
+  return '<span class="grp" title="持仓可支撑 '+r.groups+' 组合约(1组=100股+1手期权); 该策略金额、损益、Delta 已按 '+r.groups+' 组放大, ROI 不变">×'+r.groups+'组</span>';
+}
+
+function showError(msg){
+  var e=$("err"); e.textContent="⚠ "+msg; e.style.display="block";
+  setTimeout(function(){e.style.display="none";},12000);
+}
+
+function buildQuery(){
+  var p=new URLSearchParams({
+    ticker:$("ticker").value.trim().toUpperCase(),
+    position:$("position").value||"0",
+    target:$("target").value.trim(),
+    dte:$("dte").value||"180",
+    min_dte:$("min_dte").value||"90",
+    near_dte:$("near_dte").value||"45",
+    chart_top:$("chart_top").value||"8"
+  });
+  if(LP.cash!==null)p.set("lp_cash",LP.cash.toFixed(2));
+  if(LP.target!==null)p.set("lp_target",LP.target.toFixed(2));
+  if(LP.earn)p.set("lp_earn",LP.earn);
+  return p;
+}
+
+function lpFetch(url){
+  return fetch(url).then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});});
+}
+function lpBusy(on){
+  ["btnLpPos","btnLpTarget"].forEach(function(id){
+    var b=$(id); b.disabled=on;
+    if(on){b.dataset.txt=b.textContent;}
+    else if(b.dataset.txt){b.textContent=b.dataset.txt;}
+  });
+  if(on)$("btnLpPos").textContent="读取中…";
+}
+
+// ① 持仓+资金自动带入: 读取账户该股持仓与美元现金
+function lpLoadPosition(){
+  var ticker=$("ticker").value.trim().toUpperCase();
+  if(!ticker||!/^[A-Z]{1,5}$/.test(ticker)){showError("请先输入股票代码，如 AAPL");return;}
+  lpBusy(true);
+  lpFetch("/api/lp/positions?ticker="+encodeURIComponent(ticker))
+    .then(function(res){
+      lpBusy(false);
+      if(!res.ok){showError(res.j.error||"读取失败");return;}
+      var j=res.j;
+      if(!j.configured){showError(j.msg||"LongBridge 未配置：请点右上角「⚙ 连接设置」填入 API Key 或完成账号授权");return;}
+      if(j.error){showError(j.error);return;}
+      $("position").value=j.matched_qty||0;
+      var usd=j.cash&&j.cash.USD!=null?j.cash.USD:null;
+      LP.cash=usd;
+      var parts=[];
+      parts.push("已读入账户持仓 "+j.matched_qty+" 股");
+      if(usd!==null)parts.push("美元现金 $"+usd.toLocaleString("en-US",{maximumFractionDigits:0}));
+      LP.posInfo=parts.join(" · ");
+      $("posHint").textContent=LP.posInfo+"（AI 解读⑤将据此核对资金面）";
+      renderLpBar();
+      showError("✓ LongBridge 账户读取成功："+LP.posInfo);
+    })
+    .catch(function(e){lpBusy(false);showError("账户读取失败："+e+"（请确认 web_server.py 正在运行）");});
+}
+
+// ② 券商一致目标价 + 财报日: 读入目标价输入框
+function lpLoadTarget(){
+  var ticker=$("ticker").value.trim().toUpperCase();
+  if(!ticker||!/^[A-Z]{1,5}$/.test(ticker)){showError("请先输入股票代码，如 AAPL");return;}
+  lpBusy(true);
+  lpFetch("/api/lp/analyst?ticker="+encodeURIComponent(ticker))
+    .then(function(res){
+      lpBusy(false);
+      if(!res.ok){showError(res.j.error||"读取失败");return;}
+      var j=res.j;
+      if(!j.configured){showError(j.msg||"LongBridge 未配置：请点右上角「⚙ 连接设置」填入 API Key 或完成账号授权");return;}
+      if(j.target==null){showError(j.target_error||"暂无该股一致目标价数据");return;}
+      var t=Math.round(j.target*100)/100;
+      $("target").value=String(t);
+      LP.target=t; LP.earn=j.earnings||null;
+      var parts=["券商一致目标价 $"+t.toFixed(2)];
+      if(j.recommend)parts.push("评级 "+j.recommend);
+      if(j.earnings)parts.push("下次财报 "+j.earnings+(j.earnings_dte!=null?"（约 "+j.earnings_dte+" 天后）":""));
+      if(j.updated_at)parts.push("更新 "+String(j.updated_at).slice(0,10));
+      LP.tgtInfo=parts.join(" · ");
+      $("tgtHint").textContent=LP.tgtInfo+"（AI 解读①将对比你的目标价）";
+      renderLpBar();
+      showError("✓ 已读入券商一致目标价 $"+t.toFixed(2)+"（可再手工微调）");
+    })
+    .catch(function(e){lpBusy(false);showError("券商数据读取失败："+e+"（请确认 web_server.py 正在运行）");});
+}
+
+function renderLpBar(){
+  var bar=$("lpBar");
+  var chips=[];
+  if(LP.cash!==null)chips.push("💵 账户美元现金 $"+(LP.cash>=1000?LP.cash.toLocaleString("en-US",{maximumFractionDigits:0}):LP.cash.toFixed(0)));
+  if(LP.target!==null)chips.push("🎯 券商一致目标价 $"+LP.target.toFixed(0));
+  if(LP.earn)chips.push("📅 下次财报 "+LP.earn);
+  if(chips.length){bar.textContent=chips.join("　");bar.classList.remove("hidden");}
+  else bar.classList.add("hidden");
+}
+
+// ⑤ AI 策略解读面板
+function renderInsight(){
+  var card=$("insightCard"), box=$("insightBox");
+  var lines=DATA.insight&&DATA.insight.lines;
+  if(!lines||!lines.length){card.classList.add("hidden");return;}
+  box.innerHTML=lines.map(function(ln){
+    var cls="insline";
+    if(/^[⑤⑥]/.test(ln))cls+=" cashline";
+    return '<div class="'+cls+'">'+ln.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")+'</div>';
+  }).join("");
+  card.classList.remove("hidden");
+}
+
+function runAnalysis(){
+  var ticker=$("ticker").value.trim().toUpperCase();
+  if(!ticker||!/^[A-Z]{1,5}$/.test(ticker)){showError("请输入有效的美股代码（1-5个字母），如 AAPL");return;}
+  var pos=parseInt($("position").value||"0",10); if(isNaN(pos))pos=0;
+  var p=buildQuery();
+  $("btn").disabled=true; $("loading").style.display="block"; $("result").classList.add("hidden");
+  fetch("/api/analyze?"+p.toString())
+    .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+    .then(function(res){
+      $("btn").disabled=false; $("loading").style.display="none";
+      if(!res.ok){showError(res.j.error||"分析失败");return;}
+      DATA=res.j;
+      COMPARE_IDX=[]; curIdx=0; setMode("single");
+      renderAll();
+    })
+    .catch(function(e){
+      $("btn").disabled=false; $("loading").style.display="none";
+      showError("请求失败："+e+"（请确认 web_server.py 正在运行）");
+    });
+}
+$("ticker").addEventListener("keydown",function(e){if(e.key==="Enter")runAnalysis();});
+$("target").addEventListener("keydown",function(e){if(e.key==="Enter")runAnalysis();});
+// 切换代码时清掉上一标的的券商目标价/财报日(现金为账户级, 保留)
+$("ticker").addEventListener("change",function(){
+  if(LP.target!==null||LP.earn){
+    LP.target=null; LP.earn=null; LP.tgtInfo="";
+    $("tgtHint").textContent="绝对价格 / 涨跌幅，留空=维持现价";
+    renderLpBar();
+  }
+});
+
+function biasTag(b){
+  return '<span class="tag '+({看涨:"bull",看跌:"bear",中性:"",波动:"vol",对冲:"hedge"}[b]||"")+'">'+b+'</span>';
+}
+function viewTag(v){return v==="看涨"?'<span class="tag bull">看涨</span>':(v==="看跌"?'<span class="tag bear">看跌</span>':'<span class="tag">中性</span>');}
+
+function renderAll(){
+  var d=DATA;
+  $("kpis").innerHTML=
+    '<div class="kpi"><div class="k">'+d.symbol+' 现价</div><div class="v">$'+d.spot.toFixed(2)+'</div><div class="n">数据时点 '+d.data_time+'</div></div>'
+   +'<div class="kpi" style="border-top-color:#e6a700"><div class="k">目标价</div><div class="v">$'+d.target.toFixed(2)+'</div><div class="n">'+fmtPct(d.target_chg_pct)+' · 观点'+viewTag(d.view)+'</div></div>'
+   +'<div class="kpi"><div class="k">当前持仓</div><div class="v">'+d.position+' 股</div><div class="n">'+(d.position>0?"多头":(d.position<0?"空头":"无持仓"))+'</div></div>'
+   +'<div class="kpi" style="border-top-color:#8a93a3"><div class="k">主到期日</div><div class="v" style="font-size:16px">'+d.far_expiry+'</div><div class="n">DTE '+d.far_dte+' 天 · 近月腿 '+d.near_expiry+'（'+d.near_dte+'天）</div></div>'
+   +'<div class="kpi" style="border-top-color:#0d7a43"><div class="k">30日隐含波动率</div><div class="v">'+((d.iv_analysis&&d.iv_analysis.iv30_pct)?d.iv_analysis.iv30_pct.toFixed(1)+"%":"-")+'</div><div class="n">iv30（CBOE）</div></div>';
+
+  // IV KPI 卡
+  renderIvKpis();
+  renderIvCharts();
+
+  // LongBridge 账户条 + AI 策略解读
+  renderLpBar();
+  renderInsight();
+
+  renderTable();
+  updateCompareUI();
+  var sel=$("stratSel"); sel.innerHTML="";
+  DATA.rows.forEach(function(r,i){
+    var o=document.createElement("option");
+    o.value=i; o.textContent=(r.matched?"★ ":"")+r.name;
+    sel.appendChild(o);
+  });
+  setSingleStrategy(0);
+  $("result").classList.remove("hidden");
+  setTimeout(function(){
+    [chart,ivCall,ivPut,ivTerm].forEach(function(c){if(c)c.resize();});
+  }, 60);
+}
+
+function renderIvKpis(){
+  if(!DATA.iv_analysis){$("ivKpis").innerHTML="";return;}
+  var iv=DATA.iv_analysis;
+  $("ivKpis").innerHTML=
+    '<div class="kpi"><div class="k">30日 IV</div><div class="v">'+(iv.iv30_pct?iv.iv30_pct.toFixed(2)+"%":"-")+'</div><div class="n">CBOE 校准</div></div>'
+   +'<div class="kpi" style="border-top-color:var(--red)"><div class="k">25-Delta Skew</div><div class="v">'+((iv.skew_25_pct!==null&&iv.skew_25_pct!==undefined)?((iv.skew_25_pct>=0?"+":"")+iv.skew_25_pct.toFixed(2)+"%"):"-")+'</div><div class="n">25-Δ Put − 25-Δ Call IV（正=避险溢价）</div></div>'
+   +'<div class="kpi" style="border-top-color:var(--blue)"><div class="k">到期日覆盖</div><div class="v">'+(iv.term?iv.term.length:"-")+'</div><div class="n">已分析 '+(iv.term?iv.term.length:0)+' 个 DTE</div></div>'
+   +'<div class="kpi" style="border-top-color:#6b3fa0"><div class="k">最短期权 IV</div><div class="v">'+(iv.term&&iv.term.length?(iv.term[0].iv_atm*100).toFixed(2)+"%":"-")+'</div><div class="n">DTE '+(iv.term&&iv.term.length?iv.term[0].dte:"-")+' · 近期隐含波动</div></div>';
+}
+
+function renderIvCharts(){
+  if(!DATA.iv_analysis)return;
+  var iv=DATA.iv_analysis;
+  // 按到期日聚合 call/put mny->iv 数组
+  var callMap={},putMap={};
+  (iv.skews||[]).forEach(function(s){
+    var map=(s.kind==="call")?callMap:putMap;
+    if(!map[s.expiry]) map[s.expiry]={dte:s.dte,xs:[],ys:[],label:"",oi:[]};
+    map[s.expiry].label="到期 "+s.expiry+" (DTE "+s.dte+")";
+    (s.points||[]).forEach(function(p){
+      if(0.85<=p.mny && p.mny<=1.15 && p.iv>0 && p.iv<5){
+        map[s.expiry].xs.push(+p.mny.toFixed(3));
+        map[s.expiry].ys.push(+(p.iv*100).toFixed(2));
+        map[s.expiry].oi.push(p.oi);
+      }
+    });
+  });
+  function buildSeries(map){
+    return Object.keys(map).sort(function(a,b){return (callMap[a]||putMap[a]).dte-(callMap[b]||putMap[b]).dte;})
+      .map(function(exp,i){var m=map[exp];
+        var data=m.xs.map(function(x,j){return [x,m.ys[j]];});
+        return {name:m.label, type:"line", data:data, smooth:true, symbol:"none",
+                lineStyle:{color:COLORS[i%COLORS.length], width:1.6},
+                itemStyle:{color:COLORS[i%COLORS.length]}};});
+  }
+  function chartOpt(xMin,xMax){
+    return {
+      tooltip:{trigger:"axis",
+        formatter:function(ps){var p=ps[0];
+          return "<b>strike / 现价 = "+p.value[0].toFixed(3)+"</b><br/>"+
+            ps.map(function(q){return q.marker+q.seriesName+": IV "+q.value[1].toFixed(2)+"%";}).join("<br/>");}},
+      legend:{top:0,type:"scroll",textStyle:{fontSize:11}},
+      grid:{left:54,right:18,top:34,bottom:42},
+      xAxis:{type:"value",name:"Moneyness",min:0.85,max:1.15,
+        axisLabel:{formatter:function(v){return v.toFixed(2);}}},
+      yAxis:{type:"value",name:"IV",axisLabel:{formatter:"{value}%"}},
+      series:[]
+    };
+  }
+  if(!ivCall)ivCall=echarts.init($("iv-call-chart"));
+  if(!ivPut)ivPut=echarts.init($("iv-put-chart"));
+  var cs=buildSeries(callMap); var ps=buildSeries(putMap);
+  ivCall.setOption(Object.assign(chartOpt(),{series:cs}),true);
+  ivPut.setOption(Object.assign(chartOpt(),{series:ps}),true);
+
+  // Term Structure
+  if(!ivTerm)ivTerm=echarts.init($("iv-term-chart"));
+  var termData=(iv.term||[]).map(function(t){return [t.dte,+(t.iv_atm*100).toFixed(2)];});
+  var marker=null;
+  if(iv.iv30_pct){
+    marker={symbol:"diamond",symbolSize:11,
+      data:[{coord:[30,iv.iv30_pct],label:{formatter:"iv30 "+iv.iv30_pct.toFixed(2)+"%",position:"top",color:"#3a6df0",fontWeight:600}}],
+      itemStyle:{color:"#3a6df0"}};
+  }
+  ivTerm.setOption({
+    tooltip:{trigger:"axis",formatter:function(ps){return "DTE "+ps[0].value[0]+" 天<br/>ATM IV: "+ps[0].value[1].toFixed(2)+"%";}},
+    grid:{left:54,right:18,top:24,bottom:40},
+    xAxis:{type:"value",name:"DTE (天)",min:0},
+    yAxis:{type:"value",name:"ATM IV",axisLabel:{formatter:"{value}%"}},
+    series:[{name:"Term",type:"line",data:termData,smooth:true,symbol:"circle",symbolSize:7,
+             lineStyle:{color:"#3a6df0",width:2},itemStyle:{color:"#3a6df0"},
+             areaStyle:{color:"rgba(58,109,240,0.10)"},markPoint:marker}]
+  },true);
+}
+
+function toggleAll(b){
+  COMPARE_IDX=[];
+  if(b){
+    DATA.rows.forEach(function(r,i){if(COMPARE_IDX.length<4) COMPARE_IDX.push(i);});
+  }
+  updateCompareUI(); renderTable();
+}
+function updateCompareUI(){
+  var n=COMPARE_IDX.length;
+  $("compareBtn").textContent="对比选中 ("+n+")";
+  $("compareBtn").disabled=n<2;
+  $("clearBtn").style.display=n?"inline-block":"none";
+}
+function clearCompare(){
+  COMPARE_IDX=[]; $("chkAll").checked=false; updateCompareUI(); renderTable();
+}
+function setMode(m){
+  MODE=m;
+  $("modeSingle").classList.toggle("on",m==="single");
+  $("modeCompare").classList.toggle("on",m==="compare");
+  $("singleDetail").classList.toggle("hidden",m!=="single");
+  $("compareDetail").classList.toggle("hidden",m!=="compare");
+  if(m==="compare"){
+    if(COMPARE_IDX.length<2){showError("请先勾选至少 2 个策略(最多 4)"); MODE="single"; $("modeSingle").classList.add("on"); $("modeCompare").classList.remove("on"); $("singleDetail").classList.remove("hidden"); $("compareDetail").classList.add("hidden"); return;}
+    drawCompare();
+  } else {
+    if(chart) chart.setOption({},true);
+    drawChart(DATA.rows[curIdx]);
+  }
+}
+function runCompare(){
+  if(COMPARE_IDX.length<2){showError("请至少勾选 2 个策略");return;}
+  setMode("compare");
+}
+function exportReport(type){
+  var p=buildQuery();
+  var url="/api/"+type+"?"+p.toString();
+  if(type==="report"){window.open(url,"_blank");return;}
+  var a=document.createElement("a");
+  a.href=url; a.download=true;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// 滚动回输入卡片,聚焦并闪烁高亮
+function editConditions(){
+  var card=$("ticker").closest(".card");
+  if(!card) return;
+  card.scrollIntoView({behavior:"smooth", block:"start"});
+  card.classList.remove("flash"); void card.offsetWidth;  // 强制重启动画
+  card.classList.add("flash");
+  setTimeout(function(){$("ticker").focus();$("ticker").select();}, 380);
+}
+
+function renderTable(){
+  var only=$("onlyMatch").checked;
+  var tb=$("tbl").querySelector("tbody"); tb.innerHTML="";
+  DATA.rows.forEach(function(r,i){
+    if(only&&!r.matched)return;
+    var tr=document.createElement("tr");
+    if(r.matched)tr.className="match";
+    if(MODE==="single"&&i===curIdx)tr.className+=" sel";
+    var be=r.breakevens.length?r.breakevens.map(function(b){return b.toFixed(0);}).join(" / "):"-";
+    var mp=(r.up_unlimited?"≥":"")+fmtMoney(r.max_profit);
+    var ml=(r.down_unlimited?"≤":"")+fmtMoney(r.max_loss);
+    var checked=COMPARE_IDX.indexOf(i)>=0?'checked':'';
+    var disabled=(!checked && COMPARE_IDX.length>=4)?'disabled':'';
+    tr.innerHTML='<td><input type="checkbox" class="cmp" '+checked+' '+disabled+' onclick="event.stopPropagation()"></td>'
+      +"<td>"+(r.matched?'<span class="star">★ </span>':"")+r.name+grpTag(r)+"</td>"
+      +"<td>"+biasTag(r.bias)+"</td><td>"+r.risk+"</td>"
+      +"<td class=\""+(-r.net_premium>=0?"pos":"neg")+"\">"+fmtMoney(-r.net_premium,true)+"</td>"
+      +"<td class=\"capcell\"><div>"+fmtMoney(r.capital)+"</div>"+capBadge(r)+"</td><td>"+be+"</td>"
+      +"<td class=\"pos\">"+mp+"</td><td class=\"neg\">"+ml+"</td>"
+      +"<td class=\""+(r.profit_at_target>=0?"pos":"neg")+"\">"+fmtMoney(r.profit_at_target,true)+"</td>"
+      +"<td class=\""+(r.roi_at_target>=0?"pos":"neg")+"\">"+fmtPct(r.roi_at_target)+"</td>";
+    tr.onclick=(function(idx){return function(){setSingleStrategy(idx);};})(i);
+    // checkbox 点击
+    var cb=tr.querySelector(".cmp");
+    cb.onchange=(function(idx){return function(){
+      var pos=COMPARE_IDX.indexOf(idx);
+      if(this.checked){
+        if(pos<0){
+          if(COMPARE_IDX.length>=4){this.checked=false; showError("最多对比 4 个策略");return;}
+          COMPARE_IDX.push(idx);
+        }
+      } else { if(pos>=0) COMPARE_IDX.splice(pos,1); }
+      updateCompareUI(); renderTable();
+    };})(i);
+    tb.appendChild(tr);
+  });
+}
+
+function setSingleStrategy(idx){
+  curIdx=parseInt(idx,10);
+  if(MODE==="compare") setMode("single");
+  var r=DATA.rows[curIdx];
+  $("stratSel").value=String(curIdx);
+  $("stratMeta").innerHTML=r.name_en+" · "+r.shares_state+grpTag(r);
+  $("dDesc").innerHTML=(r.matched?'<span class="star">★ 匹配当前观点</span> · ':"")+r.desc
+    +(r.approx?'<br><b>注:</b> 该策略含日历/对角结构，按近月到期时点估值，结果为近似值。':"");
+  $("dLegs").innerHTML=r.legs.map(function(l){
+    return '<li class="'+(l.action==="卖出"?"sell":"")+'"><b>'+l.action+' '+l.kind+'</b> 行权价 $'+l.strike
+      +' @ $'+l.premium.toFixed(2)+' <span class="meta">到期 '+l.expiry+'（DTE '+l.dte+'）'
+      +(l.approx?" · 近月腿":"")+(l.iv?" · IV "+(l.iv*100).toFixed(0)+"%":"")+' · OI '+l.oi+'</span></li>';
+  }).join("")
+  +(r.stock_qty?'<li style="border-left-color:#e6a700"><b>正股 '+(r.stock_qty>0?"+":"-")+(Math.abs(r.stock_qty)*(r.groups||1))+' 股</b>'+(r.groups>1?'（按 '+r.groups+' 组规模化）':'（按现价计成本）')+'</li>':"");
+  $("dMaxP").innerHTML='<span class="pos">'+(r.up_unlimited?"≥":"")+fmtMoney(r.max_profit)+'</span>';
+  $("dMaxL").innerHTML='<span class="neg">'+(r.down_unlimited?"≤":"")+fmtMoney(r.max_loss)+'</span>';
+  $("dBE").textContent=r.breakevens.length?r.breakevens.map(function(b){return "$"+b.toFixed(2);}).join(" / "):"-";
+  $("dTarget").innerHTML='<span class="'+(r.profit_at_target>=0?"pos":"neg")+'">'+fmtMoney(r.profit_at_target,true)+'</span> / '+fmtPct(r.roi_at_target);
+  $("dGreeks").textContent=(r.greeks.net_delta!==undefined?r.greeks.net_delta:"-")+" / "+(r.greeks.net_theta!==undefined?r.greeks.net_theta:"-");
+  $("dCap").innerHTML=fmtMoney(r.capital)+capBadge(r)+grpTag(r);
+  $("dCapNote").textContent=r.capital_note+" · "+(capIsCost(r)?"成本支出, 不会退回":"平仓/到期后释放");
+  drawChart(r);
+  renderTable();
+}
+
+function drawChart(r){
+  if(!chart)chart=echarts.init($("chart"));
+  var data=r.grid.x.map(function(x,i){return [x,r.grid.y[i]];});
+  var markData=[];
+  r.breakevens.forEach(function(b){
+    markData.push({xAxis:b,lineStyle:{color:"#9aa3b2",type:"dashed",width:1},
+                   label:{formatter:"平衡 "+b.toFixed(1),position:"insideEndTop",color:"#8a93a3"}});
+  });
+  chart.setOption({
+    tooltip:{trigger:"axis",
+      formatter:function(ps){var p=ps[0];
+        var x=p.value[0],y=p.value[1],chg=(x/DATA.spot-1)*100;
+        return "<b>$"+x.toFixed(0)+"</b>（"+chg.toFixed(1)+"%）<br/>损益 <span class='"+(y>=0?"pos":"neg")+"'>$"+Math.round(y).toLocaleString("en-US")+"</span>";}},
+    grid:{left:64,right:24,top:46,bottom:48},
+    xAxis:{type:"value",
+      min:function(v){return Math.max(50,Math.floor(v.min/10)*10);},
+      max:function(v){return Math.ceil(v.max/10)*10;},
+      axisLabel:{formatter:function(v){return "$"+Number(v).toFixed(0);}}},
+    yAxis:{axisLabel:{formatter:function(v){return "$"+v.toLocaleString("en-US");}},
+      splitLine:{lineStyle:{color:"#eef0f4"}}},
+    series:[{
+      type:"line",data:data,smooth:false,symbol:"none",
+      lineStyle:{width:2.5,color:"#3a6df0"},
+      areaStyle:{color:"#d9e4ff"},
+      markLine:{symbol:"none",animation:false,
+        data:[
+          {xAxis:DATA.spot,lineStyle:{color:"#3a6df0",type:"solid",width:1.5},
+           label:{formatter:"现价 $"+DATA.spot.toFixed(2),position:"insideEndTop",color:"#3a6df0"}},
+          {xAxis:DATA.target,lineStyle:{color:"#e69100",type:"solid",width:1.5},
+           label:{formatter:"目标 $"+DATA.target.toFixed(2),position:"insideEndTop",color:"#b37400"}}
+        ].concat(markData)
+      },
+      markPoint:{symbol:"circle",symbolSize:9,itemStyle:{color:"#e69100"},
+        data:[{coord:[DATA.target,r.profit_at_target],
+               label:{formatter:"收益 "+fmtMoney(r.profit_at_target,true),position:"top",color:"#b37400",fontWeight:600}}]}
+    }]
+  },true);
+}
+
+function drawCompare(){
+  if(!chart)chart=echarts.init($("chart"));
+  var series=COMPARE_IDX.map(function(idx,i){
+    var r=DATA.rows[idx];
+    var data=r.grid.x.map(function(x,j){return[x,r.grid.y[j]];});
+    return {
+      name:r.name+(r.matched?" ★":""),
+      type:"line",data:data,smooth:false,symbol:"none",
+      lineStyle:{width:2.4,color:COLORS[i%COLORS.length]},
+      itemStyle:{color:COLORS[i%COLORS.length]}
+    };
+  });
+  var opt={
+    tooltip:{trigger:"axis",
+      formatter:function(ps){var p=ps[0];
+        var x=p.value[0];return "<b>$"+x.toFixed(0)+"</b><br/>"+ps.map(function(q){return '<span style="display:inline-block;width:8px;height:8px;background:'+q.color+';margin-right:5px"></span>'+q.seriesName+": <b>$"+Math.round(q.value[1]).toLocaleString("en-US")+"</b>";}).join("<br/>");}},
+    legend:{top:2,type:"scroll"},
+    grid:{left:64,right:24,top:40,bottom:42},
+    xAxis:{type:"value",
+      min:function(v){return Math.max(50,Math.floor(v.min/10)*10);},
+      max:function(v){return Math.ceil(v.max/10)*10;},
+      axisLabel:{formatter:function(v){return "$"+Number(v).toFixed(0);}}},
+    yAxis:{type:"value",axisLabel:{formatter:function(v){return "$"+v.toLocaleString("en-US");}}},
+    series:series
+  };
+  chart.setOption(opt,true);
+
+  // 对比表
+  var tb=$("cmpTbl").querySelector("tbody"); tb.innerHTML="";
+  COMPARE_IDX.forEach(function(idx,i){
+    var r=DATA.rows[idx];
+    var be=r.breakevens.length?r.breakevens.map(function(b){return "$"+b.toFixed(0);}).join(" / "):"-";
+    var tr=document.createElement("tr");
+    if(i===0) tr.className="lead";
+    tr.innerHTML='<td><span class="swatch" style="background:'+COLORS[i%COLORS.length]+'"></span>'+r.name+grpTag(r)+'</td>'
+      +'<td class="'+(-r.net_premium>=0?"pos":"neg")+'">'+fmtMoney(-r.net_premium,true)+'</td>'
+      +'<td>'+fmtMoney(r.capital)+capBadge(r)+'</td>'
+      +'<td class="'+(r.profit_at_target>=0?"pos":"neg")+'">'+fmtMoney(r.profit_at_target,true)+'</td>'
+      +'<td class="'+(r.roi_at_target>=0?"pos":"neg")+'">'+fmtPct(r.roi_at_target)+'</td>'
+      +'<td class="pos">'+(r.up_unlimited?"≥":"")+fmtMoney(r.max_profit)+'</td>'
+      +'<td class="neg">'+(r.down_unlimited?"≤":"")+fmtMoney(r.max_loss)+'</td>'
+      +'<td>'+be+'</td>';
+    tb.appendChild(tr);
+  });
+}
+
+// ============ LongBridge 连接设置（API Key / OAuth 账号授权） ============
+var CFG={mode:"none",source:null,oauthState:"idle",oauthTimer:null,oauthOpened:""};
+
+function openLpSettings(){
+  loadCfg();
+  var m=$("lpModal"); m.classList.remove("hidden");
+  showCfgTab(CFG.mode==="oauth"?"oauth":"apikey");
+}
+function closeLpSettings(){
+  $("lpModal").classList.add("hidden");
+  if(CFG.oauthTimer){clearInterval(CFG.oauthTimer);CFG.oauthTimer=null;}
+}
+function showCfgTab(t){
+  $("tabApikey").classList.toggle("on",t==="apikey");
+  $("tabOauth").classList.toggle("on",t==="oauth");
+  $("panApikey").classList.toggle("hidden",t!=="apikey");
+  $("panOauth").classList.toggle("hidden",t!=="oauth");
+}
+function cfgErr(id,msg){$(id).textContent=msg||"";}
+function lpPost(payload){
+  return fetch("/api/lp/config",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)})
+    .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});});
+}
+function cfgStateTxt(st){
+  return {idle:"未授权",starting:"正在启动…",url_ready:"等待完成授权…",
+          done:"已授权 ✓",error:"授权失败"}[st]||st;
+}
+function loadCfg(){
+  return fetch("/api/lp/config").then(function(r){return r.json();}).then(function(j){
+    CFG.mode=j.mode||"none"; CFG.source=j.source||null;
+    CFG.oauthState=(j.oauth&&j.oauth.state)||"idle";
+    var st=$("cfgStatus");
+    if(j.mode==="apikey"){
+      st.textContent="当前模式：API Key 直连 · App Key "+j.app_key+
+        "（来自"+(j.source==="file"?"本机配置文件":"环境变量")+"）";
+      st.className="mstatus ok";
+    }else if(j.mode==="oauth"){
+      st.textContent="当前模式：账号授权（OAuth）· Client "+j.client_id+
+        " · "+cfgStateTxt(j.oauth&&j.oauth.state);
+      st.className="mstatus "+((j.oauth&&j.oauth.state)==="done"?"ok":
+                     (j.oauth&&j.oauth.state)==="error"?"bad":"");
+    }else{
+      st.textContent="当前未配置。方式 A 填入三项 API Key，或方式 B 用 Client ID 完成账号授权。";
+      st.className="mstatus";
+    }
+    refreshCfgBadge();
+    return j;
+  }).catch(function(e){
+    $("cfgStatus").textContent="读取配置状态失败："+e;
+    $("cfgStatus").className="mstatus bad";
+  });
+}
+function refreshCfgBadge(){
+  var b=$("btnLpCfg"), t=$("cfgTxt");
+  b.classList.remove("ok","warn");
+  if(CFG.mode==="apikey"){t.textContent="API Key 已连接";b.classList.add("ok");}
+  else if(CFG.mode==="oauth"){
+    t.textContent=(CFG.oauthState==="done")?"账号已授权":"账号授权中";
+    b.classList.add(CFG.oauthState==="done"?"ok":"warn");
+  }else{t.textContent="连接设置";}
+}
+function saveApikey(){
+  var ak=$("cfgAk").value.trim(), sk=$("cfgSk").value, tk=$("cfgTk").value;
+  cfgErr("errAk","");
+  if(!ak||!sk||!tk){cfgErr("errAk","三项凭据均需填写。若你只想用环境变量里的凭据，请直接关闭本弹窗（无需保存）。");return;}
+  var btn=$("btnSaveAk"); btn.disabled=true; btn.textContent="保存中…";
+  lpPost({action:"save_apikey",app_key:ak,app_secret:sk,access_token:tk}).then(function(res){
+    btn.disabled=false; btn.textContent="保存并启用";
+    if(!res.ok){cfgErr("errAk",res.j.error||"保存失败");return;}
+    $("cfgAk").value="";$("cfgSk").value="";$("cfgTk").value="";
+    cfgErr("errAk","");
+    loadCfg().then(function(){cfgErr("errAk","✓ 已保存并启用（App Key "+(res.j.config.app_key||"")+"）");});
+  }).catch(function(e){btn.disabled=false;btn.textContent="保存并启用";cfgErr("errAk","保存失败："+e);});
+}
+function clearCfg(){
+  if(!confirm("确定清除本机保存的 LongBridge 配置？\n将回到未连接状态（环境变量中的凭据不受影响，仍会生效）。"))return;
+  lpPost({action:"clear"}).then(function(res){
+    if(!res.ok){cfgErr("errOa",res.j.error||"清除失败");return;}
+    cfgErr("errAk","");cfgErr("errOa","");
+    if(CFG.oauthTimer){clearInterval(CFG.oauthTimer);CFG.oauthTimer=null;}
+    loadCfg();
+  }).catch(function(e){cfgErr("errOa","清除失败："+e);});
+}
+function startOauth(){
+  var cid=$("cfgCid").value.trim();
+  cfgErr("errOa","");
+  if(!cid){cfgErr("errOa","请先填写 Client ID");return;}
+  var port=parseInt($("cfgPort").value||"60355",10);
+  if(!(port>=1024&&port<=65535)){cfgErr("errOa","回调端口需在 1024~65535 之间");return;}
+  var box=$("oauthBox"); box.classList.remove("hidden");
+  $("oauthMsg").textContent="正在启动授权服务…（若 SDK 已缓存有效令牌将直接完成，无需打开浏览器）";
+  $("oauthUrl").classList.add("hidden");
+  CFG.oauthOpened="";  // 新一轮授权, 重置"已自动打开"标记
+  lpPost({action:"save_oauth",client_id:cid,callback_port:port}).then(function(res){
+    if(!res.ok){cfgErr("errOa",res.j.error||"启动失败");return;}
+    cfgErr("errOa","");
+    pollOauth();
+  }).catch(function(e){cfgErr("errOa","启动失败："+e);});
+}
+function pollOauth(){
+  if(CFG.oauthTimer)clearInterval(CFG.oauthTimer);
+  function tick(){
+    fetch("/api/lp/oauth/status").then(function(r){return r.json();}).then(function(j){
+      var st=j.state||"idle", msg=$("oauthMsg"), u=$("oauthUrl");
+      CFG.oauthState=st; refreshCfgBadge();
+      if(st==="url_ready"){
+        msg.textContent="① 已生成授权链接，请在新窗口完成长桥登录与授权（若未自动弹出请点击下方链接）：";
+        u.href=j.url||"#"; u.textContent=j.url||""; u.classList.remove("hidden");
+        // 同一授权会话只自动打开一次(每次轮询都 window.open 会刷出大量重复标签页)
+        if(j.url&&j.url!==CFG.oauthOpened){CFG.oauthOpened=j.url; window.open(j.url,"_blank");}
+        CFG.oauthTimer=setTimeout(tick,1500);
+      }else if(st==="done"){
+        msg.textContent="✓ 授权完成！现在可点击「从账户读取」「券商目标价」使用账户数据。";
+        u.classList.add("hidden");
+        CFG.oauthTimer=null; loadCfg();
+      }else if(st==="error"){
+        msg.textContent="✗ 授权失败："+(j.error||"未知错误")+"。可重试「开始账号授权」。";
+        u.classList.add("hidden");
+        CFG.oauthTimer=null; loadCfg();
+      }else if(st==="starting"){
+        msg.textContent="正在启动授权…（数秒内无链接出现，说明 SDK 已命中本地缓存的令牌，即将直接完成）";
+        u.classList.add("hidden");
+        CFG.oauthTimer=setTimeout(tick,1500);
+      }else{
+        msg.textContent="等待授权服务返回…";
+        u.classList.add("hidden");
+        CFG.oauthTimer=setTimeout(tick,2000);
+      }
+    }).catch(function(){
+      CFG.oauthTimer=setTimeout(tick,2500);
+    });
+  }
+  tick();
+}
+// 打开页面即刷新右上角连接状态(弹窗 DOM 在其后, 需等 DOM 就绪)
+window.addEventListener("DOMContentLoaded",function(){loadCfg();});
+
+window.addEventListener("resize",function(){
+  [chart,ivCall,ivPut,ivTerm].forEach(function(c){if(c)c.resize();});
+});
+</script>
+
+<!-- ======== LongBridge 连接设置弹窗 ======== -->
+<div class="moverlay hidden" id="lpModal" onclick="if(event.target===this)closeLpSettings()">
+  <div class="mcard">
+    <div class="mhead">
+      <b>⚙ LongBridge 连接设置</b>
+      <button class="ghost sm" onclick="closeLpSettings()">✕ 关闭</button>
+    </div>
+    <div class="mstatus" id="cfgStatus">读取状态中…</div>
+
+    <div class="tabs">
+      <button class="tab" id="tabApikey" onclick="showCfgTab('apikey')">方式 A · API Key 直连</button>
+      <button class="tab" id="tabOauth" onclick="showCfgTab('oauth')">方式 B · 账号授权（OAuth）</button>
+    </div>
+
+    <!-- A: API Key -->
+    <div id="panApikey">
+      <p class="mtip">到 <b>open.longbridge.cn</b> → 应用管理 → 你的应用，获取 <b>App Key / App Secret / Access Token</b> 三项粘贴于此。
+      保存后立即生效、无需重启；凭据仅以明文存于本机 <code>~/.longport/advisor_creds.json</code>，不会回显给页面。</p>
+      <div class="mfield"><label>App Key</label><input id="cfgAk" placeholder="如 lp_xxxxxxxxxxxxxxxx" autocomplete="off" spellcheck="false"></div>
+      <div class="mfield"><label>App Secret</label><input id="cfgSk" type="password" placeholder="仅保存到本机，不回显" autocomplete="off"></div>
+      <div class="mfield"><label>Access Token</label><input id="cfgTk" type="password" placeholder="仅保存到本机，不回显" autocomplete="off"></div>
+      <div class="mbtns">
+        <button class="primary sm" id="btnSaveAk" onclick="saveApikey()">保存并启用</button>
+        <button class="ghost sm danger" onclick="clearCfg()">清除本机配置</button>
+      </div>
+      <div class="merr" id="errAk"></div>
+    </div>
+
+    <!-- B: OAuth -->
+    <div id="panOauth" class="hidden">
+      <p class="mtip">OAuth 账号授权只需 <b>Client ID</b>（LongPort 开放平台 OAuth 应用的 client_id，App 类型需为「OAuth 应用」）。
+      点击开始后会自动打开授权链接，在长桥账号登录并同意授权即完成；令牌由 SDK 缓存于 <code>~/.longport/openapi/tokens/</code>，有效期内自动复用、无需重复授权。</p>
+      <div class="mrow2">
+        <div class="mfield grow"><label>Client ID</label><input id="cfgCid" placeholder="如 longbridge_openapi_xxxxxxxx" autocomplete="off" spellcheck="false"></div>
+        <div class="mfield" style="width:120px"><label>回调端口</label><input id="cfgPort" type="number" value="60355"></div>
+      </div>
+      <p class="mtip">回调端口需与开放平台为该 Client 注册的 redirect URI 端口一致（SDK 默认 60355）。</p>
+      <div class="mbtns">
+        <button class="primary sm" id="btnOauth" onclick="startOauth()">🔗 开始账号授权</button>
+        <button class="ghost sm danger" onclick="clearCfg()">退出登录（清除本机配置）</button>
+      </div>
+      <div class="oauthbox hidden" id="oauthBox">
+        <div id="oauthMsg"></div>
+        <a id="oauthUrl" href="#" target="_blank" rel="noopener" class="hidden"></a>
+      </div>
+      <div class="merr" id="errOa"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

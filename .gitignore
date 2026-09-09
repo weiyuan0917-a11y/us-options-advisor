@@ -1,0 +1,37 @@
+# 临时缓存与构建产物
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+
+# 运行时行情缓存(由 options_advisor.py 自动生成,体积大、可随时重建)
+cache_*.json
+
+# 日志
+*.log
+web_server.log
+server.log
+
+# 用户私密/文档
+reports/*.html
+reports/*.csv
+reports/小红书笔记_*.md
+
+# 本地凭据(即便我们已经做了覆写+尽力删除,仍以防万一)
+.longport/
+.env
+.env.*
+!.env.example
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# 测试/调试残留
+*.tmp
+*.bak
