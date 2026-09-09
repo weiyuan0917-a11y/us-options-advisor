@@ -47,7 +47,7 @@ us-options-advisor/
 
 ### 安装
 ```bash
-git clone <your-repo-url> us-options-advisor
+git clone https://github.com/weiyuan0917-a11y/us-options-advisor.git us-options-advisor
 cd us-options-advisor
 
 # 推荐在虚拟环境中安装
