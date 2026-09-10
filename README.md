@@ -1,6 +1,6 @@
 # 美股期权策略推荐器 · US Options Advisor
 
-> 输入「股票代码 + 持仓」→ 自动从 CBOE 延迟行情拉链 + 从 LongPort(长桥)读取账户真实持仓与机构一致预期 → 推荐中长期期权策略并按到期股价测算收益。
+> 输入「股票代码 + 持仓」→ 自动从 CBOE 延迟行情拉链 + 从 Longbridge(长桥)读取账户真实持仓与机构一致预期 → 推荐中长期期权策略并按到期股价测算收益。
 
 仅供学习研究参考,**不构成投资建议**。
 
@@ -14,7 +14,7 @@
 
 - 📊 **真实行情数据**:直接拉 CBOE 官方延迟行情接口(免费、稳定),含期权链、隐含波动率、希腊字母
 - 🧠 **中长期策略全覆盖**:LEAPS、价差、备兑、现金担保卖沽(CSP)、领口、铁鹰、铁蝶等,看涨/看跌/波动中性/与持仓联动四象限分类
-- 💰 **自动接入账户**:接 LongPort(长桥)OpenAPI → 一键带入该股真实持仓、美元现金、券商一致目标价、财报日历
+- 💰 **自动接入账户**:接 Longbridge(长桥)OpenAPI → 一键带入该股真实持仓、美元现金、券商一致目标价、财报日历
 - 🤖 **AI 白话解读**:确定性规则引擎把"持仓 × 目标价 × 财报窗口 × 资金占用 × 策略收益"交叉成听得懂的人话,而不是甩希腊字母表
 - 🖥️ **双端可用**:命令行版(`options_advisor.py`)直接出控制台+HTML 报告;Web 版(`web_server.py`)浏览器内点一点即可
 - 🔐 **零手动配置**:页面右上角「连接设置」弹窗 —— API Key 直连 / OAuth 账号授权 二选一,无需改环境变量、无需重启服务
@@ -26,7 +26,7 @@
 ```
 us-options-advisor/
 ├── options_advisor.py        # 核心:策略引擎 + CBOE 行情 + 报告生成
-├── longbridge_api.py         # LongPort(长桥)OpenAPI 集成 + OAuth 子进程状态机
+├── longbridge_api.py         # Longbridge(长桥)OpenAPI 集成 + OAuth 子进程状态机
 ├── web_server.py             # 本地 HTTP 服务 (ThreadingHTTPServer, 零外部依赖)
 ├── web/
 │   ├── index.html            # 单页前端 (内联样式 + JS + ECharts)
@@ -35,7 +35,7 @@ us-options-advisor/
 └── .gitignore
 ```
 
-代码体量:`options_advisor.py` ~1010 行 · `web_server.py` ~750 行 · `longbridge_api.py` ~600 行 · `web/index.html` ~990 行。**仅 Python 标准库 + ECharts + `longport` SDK 三个外部依赖**。
+代码体量:`options_advisor.py` ~1010 行 · `web_server.py` ~760 行 · `longbridge_api.py` ~620 行 · `web/index.html` ~1010 行。**仅 Python 标准库 + ECharts + `longbridge` SDK 三个外部依赖**。
 
 ---
 
@@ -55,8 +55,10 @@ python -m venv .venv
 .venv\Scripts\activate          # Windows
 # source .venv/bin/activate     # macOS / Linux
 
-pip install longport            # 仅第三方依赖
+pip install longbridge          # 仅第三方依赖(长桥官方新版 SDK, 默认走 openapi.longbridge.cn)
 ```
+
+> ⚠️ **SDK 包名注意**:长桥官方 SDK 已由旧包 `longport` 迁移为 **`longbridge`**。旧包(≤4.3.7)二进制内硬编码了已下线的 `openapi.longport.cn`,升级也无法修复;本项目**优先使用 `longbridge`**,并在检测到只有旧包时自动注入 shim + 用 `http_url` 覆盖到新域名,向后兼容。
 
 ### 命令行版(无 Web)
 ```bash
@@ -90,10 +92,12 @@ python web_server.py --port 8123
    - 自动触发页面上的「AI 策略解读」交叉验证
 5. **右上角「连接设置」按钮**(⚙ 图标):
    - **方式 A · API Key 直连**:填 App Key / App Secret / Access Token → 保存即生效
-   - **方式 B · OAuth 账号授权**:填 Client ID + 回调端口 → 点「开始账号授权」→ 浏览器自动弹出官方授权页 → 登录长桥账号同意 → 完成
+   - **方式 B · OAuth 账号授权**:点「✨ 一键注册并授权」→ 自动向 `openapi.longbridge.cn` 动态注册一个 OAuth 客户端(无需去开放平台后台申请)→ 自动填入 Client ID 并弹出官方授权页 → 登录长桥账号同意 → 完成;也可点「🔗 用现有 Client ID 授权」复用已有应用
    - 「退出登录」一键清除本机凭据与 SDK 缓存令牌
 
-> 凭据优先级:**本地配置文件 > 环境变量**。环境变量名:`LONGPORT_APP_KEY` / `LONGPORT_APP_SECRET` / `LONGPORT_ACCESS_TOKEN` / `LONGPORT_CLIENT_ID`。
+> 凭据优先级:**本地配置文件 > 环境变量**。环境变量同时兼容新旧前缀:
+> `LONGBRIDGE_APP_KEY` / `LONGBRIDGE_APP_SECRET` / `LONGBRIDGE_ACCESS_TOKEN` / `LONGBRIDGE_CLIENT_ID`(推荐)以及 `LONGPORT_*`(旧前缀,仍生效)。
+> 自定义接口地址可用 `LONGBRIDGE_HTTP_URL`(默认 `https://openapi.longbridge.cn`)。
 
 ---
 
@@ -102,11 +106,11 @@ python web_server.py --port 8123
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/analyze?ticker=...&position=0&dte=180&min_dte=90&near_dte=45` | 主分析:返回策略表 + insight + 持仓/一致预期 |
-| GET | `/api/lp/positions?ticker=...` | LongPort:该股账户持仓 + 美元现金 |
-| GET | `/api/lp/analyst?ticker=...` | LongPort:券商一致目标价 + 财报日期 |
+| GET | `/api/lp/positions?ticker=...` | Longbridge:该股账户持仓 + 美元现金 |
+| GET | `/api/lp/analyst?ticker=...` | Longbridge:券商一致目标价 + 财报日期 |
 | GET | `/api/lp/config` | 当前凭据状态(脱敏) |
 | GET | `/api/lp/oauth/status` | OAuth 授权子进程状态机 |
-| POST | `/api/lp/config` | `{action:"save_apikey"\|"save_oauth"\|"clear", ...}` |
+| POST | `/api/lp/config` | `{action:"save_apikey"\|"save_oauth"\|"register_oauth"\|"clear", ...}` |
 | GET | `/api/iv?ticker=...` | 仅取 IV 历史 |
 | GET | `/api/report?ticker=...` | 单策略 HTML 报告(浏览器直接打开) |
 | GET | `/api/csv?ticker=...` | 策略 CSV 导出 |
@@ -146,8 +150,10 @@ options_advisor.py [-h] [--ticker TICKER] [--position POSITION]
         ▼
 ThreadingHTTPServer(web_server.py)
    ├── /api/analyze ──► options_advisor.build_strategies + make_insight
-   ├── /api/lp/*   ──► longbridge_api (LongPort SDK, 凭据优先级: 文件 > 环境变量)
-   │                   OAuth 子进程 ──► 状态文件 ──► 父进程轮询 (避免 GIL 冻结服务)
+   ├── /api/lp/*   ──► longbridge_api (长桥 SDK `longbridge`, endpoint=openapi.longbridge.cn)
+   │                   ├── 凭据优先级: 文件 > 环境变量
+   │                   ├── OAuth 一键注册: POST /oauth2/register (动态客户端注册)
+   │                   └── OAuth 子进程 ──► 状态文件 ──► 父进程轮询 (避免 GIL 冻结服务)
    └── /api/report, /api/csv ──► HTML/CSV 模板
         │
         ▼
@@ -157,6 +163,8 @@ ThreadingHTTPServer(web_server.py)
 ### 关键设计
 
 - **零外部 Web 依赖**:服务端仅用 `http.server` + `urllib`;前端 ECharts 走本地 `web/echarts.min.js`
+- **SDK 双版本兼容层**:优先 `longbridge`(新包,默认新域名),缺失时兜底 `longport`(旧包)并注入 `sys.modules` shim + `http_url` 覆盖,所有 URL 统一做旧域名替换
+- **OAuth 一键注册**:走 RFC 7591 动态客户端注册(`POST /oauth2/register`),用户无需去开放平台后台申请 client_id
 - **OAuth 子进程隔离**:`OAuthBuilder(...).build()` 在等浏览器授权期间会持有 GIL 锁死解释器 → 拆到独立子进程跑 + 状态文件(`~/.longport/oauth_state.json`)同步,主服务一直可响应
 - **凭据安全清除**:Windows 下自写文件常被杀软句柄锁,导致 `os.remove` 自己刚写的文件失败 → 改为"原子覆写为空 `{}` + 尽力删除",清除语义不依赖物理删除
 - **前端去重**:OAuth URL 弹窗的去重保护,避免每次轮询都开新标签页
@@ -166,9 +174,25 @@ ThreadingHTTPServer(web_server.py)
 ## ⚠️ 已知问题与注意事项
 
 - 📡 **本沙箱环境无法访问 Yahoo / yfinance**:网络层被限流 → 本工具改用 CBOE 延迟行情,无需 key 即稳定
-- 🌐 **本沙箱无法访问 `openapi.longport.cn`**:OAuth URL 是 SDK 本地构造故仍能拿到,账户/持仓/一致预期读取会在沙箱报 `Connect`;**在你的正常网络环境即返回真实数据**
+- 🌐 **接口域名已迁移**:长桥 OpenAPI 由 `openapi.longport.cn` / `openapi.longportapp.com` 迁移至 **`https://openapi.longbridge.cn`**。本项目已全面适配:默认 endpoint、环境变量兜底、OAuth 授权链接、token 缓存目录均指向新域名。**若你在沙箱内测试,新域名可达性取决于沙箱网络策略;在正常网络环境下账户/持仓/一致预期读取均可用**
+- 🔑 **旧 Client ID 可能失效**:域名迁移后,在旧平台申请的 OAuth client_id 在新授权服务器上可能返回 `oauth client not found` → 直接用「✨ 一键注册并授权」重新获取即可
 - 💵 **期权杠杆高、风险大**:任何策略建议务必先在模拟盘验证;本工具仅供学习研究,不构成投资建议
 - 🪟 **跨平台提示**:Windows 上读写用户目录走 `%USERPROFILE%` 等价 `~`;Linux/macOS 同理
+
+---
+
+## 🔄 域名迁移说明(2026)
+
+长桥官方已把 OpenAPI 入口从 `openapi.longport.cn` 切换到 `openapi.longbridge.cn`,并同步发布了新 SDK 包 `longbridge`。本项目做了四件事:
+
+| 项 | 迁移前 | 迁移后 |
+|---|---|---|
+| SDK 包 | `longport` ≤4.3.7(二进制内硬编码旧域名) | **`longbridge`**(默认即新域名),旧包自动 shim 兼容 |
+| 接口地址 | `openapi.longport.cn` | **`https://openapi.longbridge.cn`**(可用 `LONGBRIDGE_HTTP_URL` 覆盖) |
+| 环境变量 | `LONGPORT_*` | **`LONGBRIDGE_*`**(旧前缀仍兼容) |
+| OAuth 客户端 | 需去开放平台后台申请 | **页面一键动态注册**(RFC 7591 `POST /oauth2/register`) |
+
+> 兼容层实现:`longbridge_api.py` 顶部 `try: import longbridge ... except ImportError:` 兜底 `longport` + 注入 `sys.modules` shim,并对所有 URL 做旧域名 → 新域名替换,确保新旧环境都能跑。
 
 ---
 
@@ -181,6 +205,11 @@ python web_server.py --port 8123
 # 验证 LongBridge 配置链路(假 client_id 也可,只看状态机)
 curl http://127.0.0.1:8123/api/lp/config
 curl http://127.0.0.1:8123/api/lp/oauth/status
+
+# 动态注册一个 OAuth 客户端(无需后台申请), 返回 client_id 并自动启动授权
+curl -X POST http://127.0.0.1:8123/api/lp/config \
+     -H "Content-Type: application/json" \
+     -d '{"action":"register_oauth","callback_port":60355}'
 
 # 触发一次分析
 curl "http://127.0.0.1:8123/api/analyze?ticker=AAPL&position=0&dte=180&min_dte=90&near_dte=45" | head
@@ -201,10 +230,16 @@ MIT(见 `LICENSE`)。代码仅供学习研究,**不构成投资建议**。
 
 ## 🙋 常见问题
 
-**Q: 必须配 LongPort 才能用吗?**
+**Q: 长桥接口地址从 `openapi.longport.cn` 换成 `openapi.longbridge.cn` 了,要改什么?**
+A: 什么都不用改。项目默认已指向新域名;若要指向别的环境,设 `LONGBRIDGE_HTTP_URL` 即可。SDK 请用 `pip install longbridge`(新包)。
+
+**Q: OAuth 授权报 `oauth client not found`?**
+A: 说明你的 client_id 是旧域名平台时期申请的,在新授权服务器上已失效 → 在「连接设置 → 方式 B」点「✨ 一键注册并授权」重新获取一个即可,秒级完成、无需申请。
+
+**Q: 必须配 Longbridge 才能用吗?**
 A: 不配也能用,只是无法自动带入持仓/一致预期,所有参数都要手填。
 
-**Q: 不想给 LongPort 凭据怎么办?**
+**Q: 不想给 Longbridge 凭据怎么办?**
 A: 不点「连接设置」即可,工具完全本地运行,不会向长桥发送任何请求(除非你主动点那两个读取按钮)。
 
 **Q: 我已有别的券商账户,能换数据源吗?**

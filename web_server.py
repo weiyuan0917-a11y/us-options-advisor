@@ -723,6 +723,23 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": True, "started": True,
                             "config": lba.config_status(),
                             "oauth": lba.oauth_status()})
+            elif action == "register_oauth":
+                # 动态注册 OAuth 客户端(无需后台申请), 自动填入并保存
+                try:
+                    port = int(payload.get("callback_port") or 60355)
+                except (TypeError, ValueError):
+                    port = 60355
+                name = str(payload.get("client_name") or "us-options-advisor").strip()
+                res = lba.oauth_register(name, port)
+                if not res.get("ok"):
+                    self._json({"error": "注册失败: " + str(res.get("error"))}, 502)
+                    return
+                cid = res["client_id"]
+                lba.save_oauth(cid)
+                lba.oauth_begin(cid, port)
+                self._json({"ok": True, "client_id": cid, "started": True,
+                            "config": lba.config_status(),
+                            "oauth": lba.oauth_status()})
             elif action == "clear":
                 lba.clear_creds()
                 self._json({"ok": True, "config": lba.config_status()})

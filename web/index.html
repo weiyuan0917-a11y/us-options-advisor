@@ -826,22 +826,27 @@ function cfgStateTxt(st){
   return {idle:"未授权",starting:"正在启动…",url_ready:"等待完成授权…",
           done:"已授权 ✓",error:"授权失败"}[st]||st;
 }
+function cfgHost(j){
+  var u=(j&&j.http_url)||"";
+  return u.replace(/^https?:\/\//,"").replace(/\/$/,"")||"—";
+}
 function loadCfg(){
   return fetch("/api/lp/config").then(function(r){return r.json();}).then(function(j){
     CFG.mode=j.mode||"none"; CFG.source=j.source||null;
     CFG.oauthState=(j.oauth&&j.oauth.state)||"idle";
+    var host=" · 接口 "+cfgHost(j);
     var st=$("cfgStatus");
     if(j.mode==="apikey"){
       st.textContent="当前模式：API Key 直连 · App Key "+j.app_key+
-        "（来自"+(j.source==="file"?"本机配置文件":"环境变量")+"）";
+        "（来自"+(j.source==="file"?"本机配置文件":"环境变量")+"）"+host;
       st.className="mstatus ok";
     }else if(j.mode==="oauth"){
       st.textContent="当前模式：账号授权（OAuth）· Client "+j.client_id+
-        " · "+cfgStateTxt(j.oauth&&j.oauth.state);
+        " · "+cfgStateTxt(j.oauth&&j.oauth.state)+host;
       st.className="mstatus "+((j.oauth&&j.oauth.state)==="done"?"ok":
                      (j.oauth&&j.oauth.state)==="error"?"bad":"");
     }else{
-      st.textContent="当前未配置。方式 A 填入三项 API Key，或方式 B 用 Client ID 完成账号授权。";
+      st.textContent="当前未配置。方式 A 填入三项 API Key，或方式 B 用 Client ID 完成账号授权。"+host;
       st.className="mstatus";
     }
     refreshCfgBadge();
@@ -856,8 +861,9 @@ function refreshCfgBadge(){
   b.classList.remove("ok","warn");
   if(CFG.mode==="apikey"){t.textContent="API Key 已连接";b.classList.add("ok");}
   else if(CFG.mode==="oauth"){
-    t.textContent=(CFG.oauthState==="done")?"账号已授权":"账号授权中";
-    b.classList.add(CFG.oauthState==="done"?"ok":"warn");
+    if(CFG.oauthState==="done"){t.textContent="账号已授权";b.classList.add("ok");}
+    else if(CFG.oauthState==="error"){t.textContent="授权失败";b.classList.add("warn");}
+    else {t.textContent="账号授权中";b.classList.add("warn");}
   }else{t.textContent="连接设置";}
 }
 function saveApikey(){
@@ -881,6 +887,25 @@ function clearCfg(){
     if(CFG.oauthTimer){clearInterval(CFG.oauthTimer);CFG.oauthTimer=null;}
     loadCfg();
   }).catch(function(e){cfgErr("errOa","清除失败："+e);});
+}
+function registerOauth(){
+  cfgErr("errOa","");
+  var port=parseInt($("cfgPort").value||"60355",10);
+  if(!(port>=1024&&port<=65535)){cfgErr("errOa","回调端口需在 1024~65535 之间");return;}
+  var btn=$("btnReg"); btn.disabled=true; var old=btn.textContent; btn.textContent="注册中…";
+  var box=$("oauthBox"); box.classList.remove("hidden");
+  $("oauthMsg").textContent="正在向 openapi.longbridge.cn 注册 OAuth 客户端…";
+  $("oauthUrl").classList.add("hidden");
+  CFG.oauthOpened="";
+  lpPost({action:"register_oauth",callback_port:port}).then(function(res){
+    btn.disabled=false; btn.textContent=old;
+    if(!res.ok){cfgErr("errOa",res.j.error||"注册失败");$("oauthMsg").textContent="";return;}
+    var cid=res.j.client_id||"";
+    if(cid)$("cfgCid").value=cid;
+    cfgErr("errOa","");
+    $("oauthMsg").textContent="✓ 已获取 Client ID："+cid+"，正在启动授权…";
+    pollOauth();
+  }).catch(function(e){btn.disabled=false;btn.textContent=old;cfgErr("errOa","注册失败："+e);});
 }
 function startOauth(){
   var cid=$("cfgCid").value.trim();
@@ -971,15 +996,16 @@ window.addEventListener("resize",function(){
 
     <!-- B: OAuth -->
     <div id="panOauth" class="hidden">
-      <p class="mtip">OAuth 账号授权只需 <b>Client ID</b>（LongPort 开放平台 OAuth 应用的 client_id，App 类型需为「OAuth 应用」）。
-      点击开始后会自动打开授权链接，在长桥账号登录并同意授权即完成；令牌由 SDK 缓存于 <code>~/.longport/openapi/tokens/</code>，有效期内自动复用、无需重复授权。</p>
+      <p class="mtip">OAuth 账号授权需要 <b>Client ID</b>。本机可直接 <b>一键注册</b> 自动获取（走官方 <code>openapi.longbridge.cn/oauth2/register</code> 动态注册，无需去开放平台后台申请）；
+      若你已有开放平台 OAuth 应用，也可手动填入其 client_id。授权链接会自动打开，在长桥账号登录并同意即完成；令牌由 SDK 缓存于 <code>~/.longport/openapi/tokens/</code>，有效期内自动复用、无需重复授权。</p>
       <div class="mrow2">
-        <div class="mfield grow"><label>Client ID</label><input id="cfgCid" placeholder="如 longbridge_openapi_xxxxxxxx" autocomplete="off" spellcheck="false"></div>
+        <div class="mfield grow"><label>Client ID</label><input id="cfgCid" placeholder="点下方「一键注册」自动生成，或手动填写" autocomplete="off" spellcheck="false"></div>
         <div class="mfield" style="width:120px"><label>回调端口</label><input id="cfgPort" type="number" value="60355"></div>
       </div>
-      <p class="mtip">回调端口需与开放平台为该 Client 注册的 redirect URI 端口一致（SDK 默认 60355）。</p>
+      <p class="mtip">回调端口需与该 Client 注册的 redirect URI 端口一致（SDK 默认 60355）。一键注册会自动按此端口登记回调地址。</p>
       <div class="mbtns">
-        <button class="primary sm" id="btnOauth" onclick="startOauth()">🔗 开始账号授权</button>
+        <button class="primary sm" id="btnReg" onclick="registerOauth()">✨ 一键注册并授权</button>
+        <button class="ghost sm" id="btnOauth" onclick="startOauth()">🔗 用现有 Client ID 授权</button>
         <button class="ghost sm danger" onclick="clearCfg()">退出登录（清除本机配置）</button>
       </div>
       <div class="oauthbox hidden" id="oauthBox">
