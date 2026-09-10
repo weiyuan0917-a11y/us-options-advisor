@@ -35,3 +35,7 @@ Thumbs.db
 # 测试/调试残留
 *.tmp
 *.bak
+
+# 打包构建产物(由 packaging/build.bat 一键重新生成,体积大不入库)
+build/
+dist/

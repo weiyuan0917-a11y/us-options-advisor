@@ -32,10 +32,18 @@ us-options-advisor/
 │   ├── index.html            # 单页前端 (内联样式 + JS + ECharts)
 │   └── echarts.min.js        # ECharts 5 本地副本,无需联网
 ├── reports/                  # 示例截图与输出
+├── packaging/                # 构建 Windows 安装包的工具链
+│   ├── launcher.py           # 桌面启动器:起服务 + 开浏览器 + 单实例保护
+│   ├── make_icon.py          # 纯标准库绘制 app.ico(红绿 K 线图标)
+│   ├── us-options-advisor.spec   # PyInstaller 打包配置(onedir)
+│   ├── us-options-advisor.iss    # Inno Setup 安装脚本
+│   ├── ChineseSimplified.isl     # 简体中文语言包(自包含)
+│   ├── app.ico               # 应用图标
+│   └── build.bat             # Windows 一键构建脚本
 └── .gitignore
 ```
 
-代码体量:`options_advisor.py` ~1010 行 · `web_server.py` ~760 行 · `longbridge_api.py` ~620 行 · `web/index.html` ~1010 行。**仅 Python 标准库 + ECharts + `longbridge` SDK 三个外部依赖**。
+代码体量:`options_advisor.py` ~1010 行 · `web_server.py` ~760 行 · `longbridge_api.py` ~620 行 · `web/index.html` ~1010 行。**仅 Python 标准库 + ECharts + `longbridge` SDK 三个外部依赖**(`longport` 为兼容 shim,打包时一并带上)。
 
 ---
 
@@ -219,12 +227,58 @@ curl "http://127.0.0.1:8123/api/analyze?ticker=AAPL&position=0&dte=180&min_dte=9
 - 算法/数学 → `options_advisor.py`(纯函数,无 IO 副作用)
 - 券商集成 → `longbridge_api.py`(所有副作用收敛于此)
 - HTTP/前端 → `web_server.py` + `web/index.html`
+- 安装打包 → `packaging/`(桌面启动器、图标、Inno Setup 脚本)
+
+---
+
+## 📦 打包为 Windows 安装包
+
+```bat
+packaging\build.bat
+```
+
+一键脚本会自动完成三步:
+
+1. **生成应用图标** → `packaging\app.ico`(纯标准库绘制红绿 K 线)
+2. **PyInstaller 打包** → `dist\USOptionsAdvisor\`(onedir,带 Python 运行时与 SDK)
+3. **Inno Setup 编译** → `dist\USOptionsAdvisor-Setup-<版本>-win64.exe`(lzma2/max 压缩)
+
+**前置条件**:
+- Python 3.10+ + `pip install pyinstaller`
+- Inno Setup 6.3+(提供 `ISCC.exe`,从 https://jrsoftware.org/isdl.php 下载)
+
+**产物体积**:
+
+| 阶段 | 内容 | 体积 |
+|---|---|---|
+| 源代码 | `*.py` + `web/` | ~1.6 MB |
+| PyInstaller onedir | 源代码 + Python 3.13 运行时 + longbridge/longport SDK | ~97 MB |
+| **Inno Setup 安装包** | 上述全部压成单一 exe | **~23 MB** |
+
+**安装包特性**:
+- 现代向导界面(简体中文 + 英文回退)
+- 仅 64 位 Windows 10+(用 `longbridge` 4.5 的 Rust 扩展)
+- 无需管理员权限安装(`PrivilegesRequired=lowest`,普通用户也能装)
+- 双击桌面图标自动起服务、开浏览器
+- **单实例保护**:重复双击复用同一窗口(命名 mutex)
+- 卸载程序自动清理安装目录、桌面/开始菜单快捷方式、注册表项
+- 自动写入「应用和功能」卸载入口
+
+**端到端验证**(在 Windows 10/11 实机或同等环境):
+
+```bat
+:: 静默安装到自定义目录(便于测试)
+dist\USOptionsAdvisor-Setup-1.0.0-win64.exe /VERYSILENT /SUPPRESSMSGBOXES /DIR=D:\Test\UOpts
+
+:: 安装后双击 USOptionsAdvisor.exe → 浏览器自动打开 http://127.0.0.1:8123/
+:: 通过控制面板「应用和功能」卸载即可,或运行安装目录下的 unins000.exe
+```
 
 ---
 
 ## 📜 License
 
-MIT(见 `LICENSE`)。代码仅供学习研究,**不构成投资建议**。
+MIT。代码仅供学习研究,**不构成投资建议**。
 
 ---
 
