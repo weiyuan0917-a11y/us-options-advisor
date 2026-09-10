@@ -4,6 +4,17 @@
 
 仅供学习研究参考,**不构成投资建议**。
 
+## 📥 一键下载安装
+
+[![下载 Windows 安装包](https://img.shields.io/badge/%E2%AC%87_%E4%B8%8B%E8%BD%BD-Windows_%E5%AE%89%E8%A3%85%E5%8C%85-blue?style=flat-square&logo=windows)](https://github.com/weiyuan0917-a11y/us-options-advisor/releases/latest/download/USOptionsAdvisor-Setup-1.0.0-win64.exe)
+
+> **[⬇ 点击下载 USOptionsAdvisor-Setup-1.0.0-win64.exe（约 22 MB）](https://github.com/weiyuan0917-a11y/us-options-advisor/releases/latest/download/USOptionsAdvisor-Setup-1.0.0-win64.exe)**
+>
+> - ✅ **一键安装**：双击即装，全程中文向导，普通用户权限即可，无需管理员、无需 Python 环境
+> - ✅ **支持 Windows 10 及以上版本**（64 位）
+> - ✅ 安装后双击桌面图标，浏览器自动打开操作界面
+> - 🔄 老用户升级：直接运行新安装包覆盖安装即可
+
 ![首页](reports/ui_home.png)
 ![连接设置 / API Key](reports/ui_cfg_apikey.png)
 ![连接设置 / OAuth 授权](reports/ui_cfg_oauth_url.png)
