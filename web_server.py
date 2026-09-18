@@ -344,7 +344,7 @@ def analyze(symbol: str, position: int, target_raw: str,
     if far_exp is None:
         raise ValueError("无可用到期日")
 
-    strats = oa.build_strategies(chain, spot, far_exp, near_exp, position)
+    strats = oa.build_strategies(chain, spot, far_exp, near_exp, position, target)
     rows, view = oa.rank_strategies(strats, spot, target)
     iv_data = build_iv_analysis(raw, spot)
     far_dte = chain.dte(far_exp)
@@ -583,7 +583,7 @@ class Handler(BaseHTTPRequestHandler):
                 near_exp = chain.pick_expiry(near_dte, 7)
                 if far_exp is None:
                     self._json({"error": "无可用到期日"}, 400); return
-                strats = oa.build_strategies(chain, spot, far_exp, near_exp, position)
+                strats = oa.build_strategies(chain, spot, far_exp, near_exp, position, target)
                 rows, view = oa.rank_strategies(strats, spot, target)
                 iv_data = build_iv_analysis(raw, spot)
                 data_time = d.get("last_trade_time") or "N/A"
@@ -643,7 +643,7 @@ class Handler(BaseHTTPRequestHandler):
                 near_exp = chain.pick_expiry(near_dte, 7)
                 if far_exp is None:
                     self._json({"error": "无可用到期日"}, 400); return
-                strats = oa.build_strategies(chain, spot, far_exp, near_exp, position)
+                strats = oa.build_strategies(chain, spot, far_exp, near_exp, position, target)
                 rows, view = oa.rank_strategies(strats, spot, target)
                 lp = _parse_lp(q)
                 insight = make_insight(rows, symbol, spot, target, view,

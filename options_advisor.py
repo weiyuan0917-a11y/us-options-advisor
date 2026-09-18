@@ -253,7 +253,7 @@ def fmt_pct(v):
 
 # ---------------------------------------------------------------- 策略生成
 def build_strategies(chain: Chain, spot: float, far_exp: str, near_exp: str,
-                     position: int) -> List[Strategy]:
+                     position: int, target: float | None = None) -> List[Strategy]:
     S = spot
     out: List[Strategy] = []
 
@@ -347,12 +347,19 @@ def build_strategies(chain: Chain, spot: float, far_exp: str, near_exp: str,
         add(Strategy("铁蝶式", "Iron Butterfly", "中性", ["中性"],
                      "卖平值跨式+两边保护翼, 收入高但赌到期钉在平值", [wp, sp_, sc, wc],
                      capital=wing * MULT, capital_note="保护翼保证金", risk_level="中"))
-    b1 = opt(far_exp, "call", S * 0.95, +1); b2 = opt(far_exp, "call", S, -1); b3 = opt(far_exp, "call", S * 1.05, +1)
+    # 多头蝶式看涨(3腿): 中心 strike 跟着目标价走, 翼宽 = 5% × 目标价; 无目标价时回退到 ±5% × 正股价
+    fly_center = target if (target and target > 0) else S
+    fly_half = max(0.05 * fly_center, 1.0)
+    b1 = opt(far_exp, "call", fly_center - fly_half, +1)
+    b2 = opt(far_exp, "call", fly_center,           -1, need_bid=True)
+    b3 = opt(far_exp, "call", fly_center + fly_half, +1)
     if all([b1, b2, b3]):
         debit = (b1.premium - 2 * b2.premium + b3.premium) * MULT
+        center_note = f"中心={fly_center:.2f}={'目标价' if (target and target>0) else '正股'}"
         add(Strategy("多头蝶式看涨", "Long Call Butterfly", "中性", ["中性"],
-                     "买低卖双平买高, 低成本赌标的停在行权价附近", [b1, b2, b2, b3],
-                     capital=max(debit, 1), capital_note="净支出", risk_level="低"))
+                     f"买低卖双平买高, 低成本赌到期钉在{('目标价 ' + f'{fly_center:.0f}') if (target and target>0) else '行权价'}附近 (±{fly_half:.0f})",
+                     [b1, b2, b2, b3],
+                     capital=max(debit, 1), capital_note=f"净支出 · {center_note}", risk_level="低"))
 
     # ---------- 与持仓相关 ----------
     has_long = position >= 100
@@ -931,7 +938,7 @@ def run_analysis(args) -> None:
     print(f"[2/4] 主到期日 {far_exp}（DTE {far_dte}天）, 近月腿 {near_exp}（DTE {chain.dte(near_exp)}天）")
 
     print(f"[3/4] 生成策略 (目标价 ${target:,.2f}) ...")
-    strats = build_strategies(chain, spot, far_exp, near_exp, args.position)
+    strats = build_strategies(chain, spot, far_exp, near_exp, args.position, target)
     rows, view = rank_strategies(strats, spot, target)
 
     print_console(rows, view, spot, target, symbol, args.position, far_exp, far_dte, near_exp)
